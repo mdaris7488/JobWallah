@@ -1,0 +1,60 @@
+# Production stack for jobwallah.online:  docker compose up -d --build
+#   caddy (auto HTTPS, ports 80/443) -> web (nginx, static build + /api proxy) -> api (Node/Express)
+# Database: MongoDB Atlas (cloud) - no local "mongo" container, so there is nothing extra to secure/back up here.
+services:
+  api:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      TRUST_PROXY: 1
+      CLIENT_URL: ${CLIENT_URL}
+      MONGO_URI: ${MONGO_URI}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      ACCESS_TOKEN_TTL: 15m
+      REFRESH_TOKEN_TTL_DAYS: 7
+      COOKIE_SECURE: "true"
+      SEED_ADMIN_NAME: ${SEED_ADMIN_NAME:-JobWallah Admin}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
+      # payments (Razorpay) - keep PAYMENT_MODE=demo until your live keys are ready
+      PAYMENT_MODE: ${PAYMENT_MODE:-demo}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      # email (forgot-password code + payment receipts)
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-JobWallah <no-reply@jobwallah.online>}
+      # Set to "true" to turn OFF only the video compressor (saves CPU/RAM on a small server). Everything else stays on.
+      DISABLE_VIDEO_TOOL: ${DISABLE_VIDEO_TOOL:-false}
+    expose:
+      - "5000"
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    expose:
+      - "80"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
+volumes:
+  caddy_data:
+  caddy_config:

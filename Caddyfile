@@ -1,0 +1,5 @@
+# Caddy gets a free, auto-renewing HTTPS certificate for these domains automatically - nothing else to configure.
+# Make sure jobwallah.online AND www.jobwallah.online both have an A record pointing at this server's IP first.
+jobwallah.online, www.jobwallah.online {
+    reverse_proxy web:80
+}
