@@ -20,8 +20,20 @@ if (env.TRUST_PROXY > 0) app.set('trust proxy', env.TRUST_PROXY); // needed for 
 
 app.use(helmet());
 const allowedOrigins = env.CLIENT_URL.split(',').map((s) => s.trim()).filter(Boolean);
+// app.use(cors({
+//   origin: (origin, cb) => (!origin || allowedOrigins.includes(origin) ? cb(null, true) : cb(new ApiError(403, 'Origin not allowed.'))),
+//   credentials: true,
+//   exposedHeaders: ['Content-Disposition', 'X-Original-Bytes', 'X-Result-Bytes', 'X-Result-Count', 'X-Target-Met', 'Retry-After'],
+// }));
 app.use(cors({
-  origin: (origin, cb) => (!origin || allowedOrigins.includes(origin) ? cb(null, true) : cb(new ApiError(403, 'Origin not allowed.'))),
+  origin: (origin, cb) => {
+    // Allow requests with no origin (like mobile apps or curl) or if it's in allowedOrigins or is a vercel app
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      cb(null, true);
+    } else {
+      cb(new ApiError(403, 'Origin not allowed.'));
+    }
+  },
   credentials: true,
   exposedHeaders: ['Content-Disposition', 'X-Original-Bytes', 'X-Result-Bytes', 'X-Result-Count', 'X-Target-Met', 'Retry-After'],
 }));

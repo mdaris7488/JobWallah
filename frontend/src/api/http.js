@@ -9,7 +9,7 @@ export const setAccessToken = (token) => { accessToken = token; };
 export const registerAuthFailureHandler = (fn) => { onAuthFailure = fn; };
 
 // const BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
-const BASE_URL = "https://jobwallah-backend2.onrender.com";
+const BASE_URL = "https://jobwallah-backend2.onrender.com/api/v1";
 const http = axios.create({ baseURL: BASE_URL, withCredentials: true, timeout: 20000 });
 
 http.interceptors.request.use((config) => {
