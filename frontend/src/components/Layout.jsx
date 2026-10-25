@@ -84,8 +84,20 @@ function Navbar() {
           <NavLink to="/pricing" className="nav-link nav-pro">Pro Alerts</NavLink>
           <div className="nav-auth">
             {user ? (
-              <UserMenu user={user} onLogout={onLogout} />
-            ) : (
+  <>
+    <UserMenu user={user} onLogout={onLogout} />
+    <div className="nav-account">
+      <div className="nav-account-head">
+        <span className="avatar" aria-hidden="true">{initials(user.name)}</span>
+        <div><strong>{user.name}</strong><div className="muted small">{user.email}</div></div>
+      </div>
+      {user.role === 'admin' && <Link className="nav-link" to="/admin">Admin panel</Link>}
+      <Link className="nav-link" to="/dashboard">My account</Link>
+      <Link className="nav-link" to="/dashboard?tab=saved">Saved jobs</Link>
+      <button type="button" className="btn btn-danger btn-block" onClick={onLogout}>Log out</button>
+    </div>
+  </>
+) : (
               <>
                 <Link className="btn btn-ghost btn-sm" to="/login">Login</Link>
                 <Link className="btn btn-primary btn-sm" to="/register">Sign Up</Link>
