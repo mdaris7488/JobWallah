@@ -83,8 +83,8 @@ function Navbar() {
           {NAV.map(([to, label]) => <NavLink key={to} to={to} className="nav-link">{label}</NavLink>)}
           <NavLink to="/pricing" className="nav-link nav-pro">Pro Alerts</NavLink>
           <div className="nav-auth">
-            {user ? (
-  <>
+             {user ? (
+            <>
     <UserMenu user={user} onLogout={onLogout} />
     <div className="nav-account">
       <div className="nav-account-head">
