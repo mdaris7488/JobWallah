@@ -117,29 +117,29 @@ export const me = asyncHandler(async (req, res) => {
 });
 
 // ---------------------------------------------------------------- forgot / reset password (email code)
-const GENERIC_FORGOT = 'If an account exists for this email, a 6-digit code has been sent. It is valid for %MIN% minutes.';
+const GENERIC_FORGOT = 'A 6-digit code has been sent to your email. It is valid for %MIN% minutes.';
 
 export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email });
 
-  if (user && user.isActive) {
-    const existing = await PasswordReset.findOne({ user: user._id }).select('lastSentAt');
-    const tooSoon = existing && Date.now() - existing.lastSentAt.getTime() < RESEND_COOLDOWN_MS;
-    if (!tooSoon) {
-      const code = generateOtp();
-      const now = Date.now();
-      await PasswordReset.findOneAndUpdate(
-        { user: user._id },
-        { codeHash: hashOtp(user._id, code, env.JWT_ACCESS_SECRET), expiresAt: new Date(now + env.RESET_CODE_MINUTES * 60_000), attempts: 0, lastSentAt: new Date(now) },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      );
-      // Sent in the background so the response time is the same whether or not the account exists.
-      sendMail({ to: user.email, ...passwordResetEmail({ name: user.name, code, minutes: env.RESET_CODE_MINUTES }) })
-        .catch((err) => console.error('Password reset email failed:', err.message));
-    }
+  // Unregistered email -> clear error so the user can fix the email or register.
+  if (!user) throw new ApiError(404, 'No account exists with this email. Please check the email or register.');
+  if (!user.isActive) throw new ApiError(403, 'This account is disabled. Please contact support.');
+
+  const existing = await PasswordReset.findOne({ user: user._id }).select('lastSentAt');
+  const tooSoon = existing && Date.now() - existing.lastSentAt.getTime() < RESEND_COOLDOWN_MS;
+  if (!tooSoon) {
+    const code = generateOtp();
+    const now = Date.now();
+    await PasswordReset.findOneAndUpdate(
+      { user: user._id },
+      { codeHash: hashOtp(user._id, code, env.JWT_ACCESS_SECRET), expiresAt: new Date(now + env.RESET_CODE_MINUTES * 60_000), attempts: 0, lastSentAt: new Date(now) },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    sendMail({ to: user.email, ...passwordResetEmail({ name: user.name, code, minutes: env.RESET_CODE_MINUTES }) })
+      .catch((err) => console.error('Password reset email failed:', err.message));
   }
-  // Always the same answer: never reveal which emails are registered.
   res.json({ success: true, message: GENERIC_FORGOT.replace('%MIN%', String(env.RESET_CODE_MINUTES)) });
 });
 

@@ -95,7 +95,11 @@ export default function ForgotPassword() {
       footer={<>Remembered it? <Link to="/login">Back to login</Link></>}>
       <form className="form" onSubmit={sendCode}>
         <Field label="Email"><input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
-        {error && <div className="form-error" role="alert">{error}</div>}
+        {error && (
+          <div className="form-error" role="alert">
+            {error}{error.startsWith('No account') && <> <Link to="/register" state={{ email: email.trim() }}><strong>Register here</strong></Link></>}
+          </div>
+        )}
         <button className="btn btn-accent btn-block" disabled={busy}>{busy ? 'Sending…' : 'Send code'}</button>
       </form>
     </AuthShell>
